@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  nats-server:
+    image: nats:2.10.22-alpine3.20
+    ports:
+      - 8222:8222
+
+  client-gateway:
+    build: ./client-gateway
+    ports:
+      - ${CLIENT_GATEWAY_PORT}:3000
+    volumes:
+      - ./client-gateway/src:/usr/src/app/src
+    command: yarn start:dev
+    environment:
+      - APP_PORT=3000
+      - NATS_SERVERS=nats://nats-server:4222
+  
+  products-ms:
+    build: ./products-ms
+    volumes:
+      - ./products-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    environment:
+      - APP_PORT=3001
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=file:./dev.db
+
+  pgdb-orders-ms:
+    container_name: pg_orders_database
+    image: postgres:17.0-alpine
+    restart: always
+    volumes:
+      - ./orders-ms/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+      - POSTGRES_DB=orders
+
+  orders-ms:
+    depends_on:
+      - pgdb-orders-ms
+    build: ./orders-ms
+    ports:
+      - 3002:3002
+    volumes:
+      - ./orders-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    environment:
+      - APP_PORT=3002
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=postgresql://postgres:123456@pgdb-orders-ms:5432/orders?schema=public
+  
