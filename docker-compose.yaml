@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   nats-server:
@@ -16,7 +16,7 @@ services:
     environment:
       - APP_PORT=3000
       - NATS_SERVERS=nats://nats-server:4222
-  
+
   products-ms:
     build: ./products-ms
     volumes:
@@ -53,7 +53,7 @@ services:
       - APP_PORT=3002
       - NATS_SERVERS=nats://nats-server:4222
       - DATABASE_URL=postgresql://postgres:123456@pgdb-orders-ms:5432/orders?schema=public
-  
+
   payments-ms:
     build: ./payments-ms
     ports:
@@ -68,3 +68,29 @@ services:
       - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
       - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
       - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
+
+  auth-ms:
+    depends_on:
+      - mongo
+    build: ./auth-ms
+    ports:
+      - ${AUTH_PORT}:${AUTH_PORT}
+    volumes:
+      - ./auth-ms/src:/usr/src/app/src
+    command: yarn start:dev
+    environment:
+      - APP_PORT=${AUTH_PORT}
+      - NATS_SERVERS=nats://nats-server:4222
+      - DB_URL=${AUTH_DB_URL}
+
+  mongo:
+    container_name: mongo_auth_db
+    image: mongo:noble
+    restart: always
+    volumes:
+      - /home/jorge/Documentos/GitHub/microservices/02-products-app/auth-ms/mongo-vol:/data/db
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
