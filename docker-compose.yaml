@@ -70,8 +70,6 @@ services:
       - STRIPE_ENDPOINT_SECRET=${STRIPE_ENDPOINT_SECRET}
 
   auth-ms:
-    depends_on:
-      - mongo
     build: ./auth-ms
     ports:
       - ${AUTH_PORT}:${AUTH_PORT}
@@ -81,16 +79,19 @@ services:
     environment:
       - APP_PORT=${AUTH_PORT}
       - NATS_SERVERS=nats://nats-server:4222
-      - DB_URL=${AUTH_DB_URL}
+      - DATABASE_URL=${AUTH_DB_URL}
+      - JWT_SECRET=superSecret
+      - JWT_ISSUER=auth.ms
+      - JWT_EXPIRES=12h
 
-  mongo:
-    container_name: mongo_auth_db
-    image: mongo:noble
-    restart: always
-    volumes:
-      - /home/jorge/Documentos/GitHub/microservices/02-products-app/auth-ms/mongo-vol:/data/db
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=password
+  # mongo:
+  #   container_name: mongo_auth_db
+  #   image: mongo:noble
+  #   restart: always
+  #   volumes:
+  #     - /home/jorge/Documentos/GitHub/microservices/02-products-app/auth-ms/mongo-vol:/data/db
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=admin
+  #     - MONGO_INITDB_ROOT_PASSWORD=password
